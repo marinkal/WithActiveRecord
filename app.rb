@@ -7,10 +7,20 @@ require 'sinatra/activerecord'
 set :database, "sqlite3:barbershop.db"
 
 class Client < ActiveRecord::Base
+  validates :name, presence: true, length: {minimum: 3}
+  validates :phone, presence: true
+  validates :datestamp, presence: true
+  validates :color, presence: true
 end
 
 class Barber < ActiveRecord::Base
 
+end
+
+before '/visit' do
+
+  @barbers = Barber.order "name ASC"
+  @c = Client.new
 end
 
 get '/' do
@@ -18,33 +28,42 @@ get '/' do
 	erb :index			
 end
 
-
 get '/visit' do
+
   erb :visit
+
 end
+
 
 post '/visit' do
  
-  @barber = params[:barber]
-  @name = params[:username]
-  @phone = params[:phone]
-  @date = params[:date]
-  @color = params[:color]
- 
-  hh = {:username => 'Введите имя',:phone => 'Введите телефон',:date => 'Введите дату'}
-  @error=hh.select{|key,_|params[key].strip==""}.values.join(",")
-  if @error != ""
-    return erb :visit 
-  else 
-  #f=File.open("./public/clients.txt","a")
-  #f.write("#{@barber}, #{@name}, #{@phone}, #{@date}, #{@time}\n")
-  #f.close
-  #@db.execute 'insert into users(name,barber,phone,DateStamp,color) Values(?,?,?,?,?)',[@name,@barber,@phone,@date+' '+@time,@color]
- # @db.execute  'insert into Users(name,barber,phone,DataStamp,color) Values(?,?,?,?,?,)',[@name,@barber,@phone,@date + ' '+@time,@color]
-  db = get_db
-  db.execute 'insert into users(name,barber,phone,datestamp,color) Values(?,?,?,?,?)',[@name,@barber,@phone,@date,@color]
-  db.close
- 
-  erb "Поздравляем! Вы запиисаны к парикмахеру #{@barber}, на #{@date}, вы выбрали цвет #{@color} "
-  end
+ @c = Client.new params[:client]
+ if @c.save
+
+ erb "Поздравляем! Вы запиисаны "
+else
+  @error = @c.errors.full_messages.first
+  erb :visit
+
+end
+
+
+
+end
+
+
+get '/barber/:id' do
+@barber = Barber.find(params[:id])
+erb :barber
+end
+
+
+get '/bookings' do
+ @clients = Client.order "id DESC"
+ erb :bookings
+end
+
+get '/client/:id' do
+  @client = Client.find(params[:id])
+  erb :client
 end
